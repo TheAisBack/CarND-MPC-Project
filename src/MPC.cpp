@@ -35,10 +35,7 @@ class FG_eval {
     // the Solver function below.
   }
 };
-
-//
 // MPC class definition implementation.
-//
 MPC::MPC() {}
 MPC::~MPC() {}
 
