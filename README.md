@@ -5,8 +5,6 @@ Self-Driving Car Engineer Nanodegree Program
 
 ## Questionnaire 
 
----
-
 ## The Model
 
 _Student describes their model in detail. This includes the state, actuators and update equations._
@@ -17,9 +15,7 @@ _Student discusses the reasoning behind the chosen N (timestep length) and dt (e
 
 ## Polynomial Fitting and MPC Preprocessing
 
-_A polynomial is fitted to waypoints.
-
-If the student preprocesses waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described._
+_A polynomial is fitted to waypoints. If the student preprocesses waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described._
 
 ## Model Predictive Control with Latency
 
