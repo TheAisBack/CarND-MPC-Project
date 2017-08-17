@@ -42,17 +42,13 @@ The model updates with the following equations:
 
 _Student discusses the reasoning behind the chosen N (timestep length) and dt (elapsed duration between timesteps) values. Additionally the student details the previous values tried._
 
-
-
-
+I set the N and dt as 10 and 0.1. I actually picked 0.1 and 10 from the courses, these values actually worked very well with the model I selected and I did not need to change them. Referencing the Q/A. 
 
 ## Polynomial Fitting and MPC Preprocessing
 
 _A polynomial is fitted to waypoints. If the student preprocesses waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described._
 
-
-
-
+The processing for the polynomial was taken by using the VectorXd::Map to find the coordinates of the car and convert it to relay back into the system.
 
 ## Model Predictive Control with Latency
 

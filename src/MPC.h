@@ -4,6 +4,9 @@
 #include "Eigen-3.3/Eigen/Core"
 
 using namespace std;
+
+// adding the initials to the code, I had to add const to the variable so that it doesn't cause duplicate errors. 
+
 const double latency = 0.1;
 const double dt = 0.1;
 const size_t N = 10;

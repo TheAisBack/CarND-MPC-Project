@@ -19,7 +19,7 @@ double dt = .1;
 // presented in the classroom matched the previous radius.
 //
 // This is the length from front to CoG that has a similar radius.
-const double Lf = 2.67;
+double Lf = 2.67;
 
 double ref_cte = 0;
 double ref_epsi = 0;
@@ -33,6 +33,9 @@ size_t cte_start = v_start + N;
 size_t epsi_start = cte_start + N;
 size_t delta_start = epsi_start + N;
 size_t a_start = delta_start + N - 1;*/
+
+
+// Moved variables, doubles, size_t to MPC.H, was easier to use and flowed better.
 
 class FG_eval {
  public:
@@ -52,22 +55,25 @@ class FG_eval {
     // Reference State Cost
     // TODO: Define the cost related the reference state and
     // any anything you think may be beneficial.
-    for(int i = 0; i < N; i++) {
-      fg[0] += 2000*CppAD::pow(vars[cte_start + i] - ref_cte, 2);
-      fg[0] += 2000*CppAD::pow(vars[epsi_start + i] - ref_epsi, 2);
-      fg[0] += CppAD::pow(vars[v_start + i] - ref_v, 2);
+    AD<double> cost = 0.0;
+
+    for (int i = 0; i < N; i++) {
+      cost += 2000 * CppAD::pow( vars[cte_start + i], 2 );
+      cost += 2000 * CppAD::pow( vars[epsi_start + i], 2 );
+      cost += 10 * CppAD::pow(vars[v_start + i] - ref_v, 2);
     }
 
-    for(int i = 0; i < N - 1; i++){
-      fg[0] += 5*CppAD::pow(vars[delta_start + i], 2);
-      fg[0] += 5*CppAD::pow(vars[a_start + i], 2);
-    }
-    
-    for(int i = 0; i < N - 2; i++){
-      fg[0] += 200*CppAD::pow(vars[delta_start + i] - vars[delta_start + i], 2);
-      fg[0] += 10*CppAD::pow(vars[a_start + i] - vars[a_start + i], 2);
+    for (int i = 0; i < N - 1; i++) {
+      cost += 5 * CppAD::pow(vars[delta_start + i], 2);
+      cost += 5 * CppAD::pow(vars[a_start + i], 2);
     }
 
+    for (int i = 0; i < N - 2; i++) {
+      cost += 200 * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+      cost += 10 * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+    }
+
+    fg[0] = cost;
     //
     // Setup Constraints
     // 
@@ -86,39 +92,39 @@ class FG_eval {
     fg[1 + epsi_start] = vars[epsi_start];
 
     // The rest of the constraints
-    for (int i = 0; i < N - 1; i++) {
+    for (int i = 1; i < N; i++) {
       // t + 1
-      AD<double> x1 = vars[x_start + i + 1];
-      AD<double> y1 = vars[y_start + i + 1];
-      AD<double> psi1 = vars[psi_start + i + 1];
-      AD<double> v1 = vars[v_start + i + 1];
-      AD<double> cte1 = vars[cte_start + i + 1];
-      AD<double> epsi1 = vars[epsi_start + i + 1];
-
+      AD<double> x0 = vars[x_start + i - 1];
+      AD<double> y0 = vars[y_start + i - 1];
+      AD<double> psi0 = vars[psi_start + i - 1];
+      AD<double> v0 = vars[v_start + i - 1];
+      AD<double> cte0 = vars[cte_start + i - 1];
+      AD<double> epsi0 = vars[epsi_start + i - 1];
       // t
-      AD<double> x0 = vars[x_start + i];
-      AD<double> y0 = vars[y_start + i];
-      AD<double> psi0 = vars[psi_start + i];
-      AD<double> v0 = vars[v_start + i];
-      AD<double> cte0 = vars[cte_start + i];
-      AD<double> epsi0 = vars[epsi_start + i];
+      AD<double> delta0 = vars[delta_start + i - 1];
+      AD<double> a0 = vars[a_start + i - 1];
 
-      AD<double> delta0 = vars[delta_start + i];
-      AD<double> a0 = vars[a_start + i];  
+      AD<double> x1 = vars[x_start + i];
+      AD<double> y1 = vars[y_start + i];
+      AD<double> psi1 = vars[psi_start + i];
+      AD<double> v1 = vars[v_start + i];
+      AD<double> cte1 = vars[cte_start + i];
+      AD<double> epsi1 = vars[epsi_start + i];
 
-      AD<double> f0 = coeffs[0] + coeffs[1] * x0 + coeffs[2] * x0 * x0 + coeffs[3] * x0 * x0 * x0;
-      AD<double> psides0 = CppAD::atan(3*coeffs[3] * x0 * x0 + 2 * coeffs[2] * x0 + coeffs[1]);  
-
+      AD<double> f0 = coeffs[0] + coeffs[1]*x0 + coeffs[2]*x0*x0 + coeffs[3]*x0*x0*x0;
+      AD<double> psides0 = CppAD::atan(3*coeffs[3]*x0*x0 + 2*coeffs[2]*x0 + coeffs[1]);
+  
       // Here's 'x' to get you started.
       // The idea here is to constraint this value to be 0.
       //
       // TODO: Setup the rest of the model constraints
+     
       fg[1 + x_start + i] = x1 - (x0 + v0 * CppAD::cos(psi0) * dt);
       fg[1 + y_start + i] = y1 - (y0 + v0 * CppAD::sin(psi0) * dt);
-      fg[1 + psi_start + i] = psi1 - (psi0 - v0 * delta0/Lf * dt);
+      fg[1 + psi_start + i] = psi1 - (psi0 + (v0/Lf) * delta0 * dt);
       fg[1 + v_start + i] = v1 - (v0 + a0 * dt);
       fg[1 + cte_start + i] = cte1 - ((f0 - y0) + (v0 * CppAD::sin(epsi0) * dt));
-      fg[1 + epsi_start + i] = epsi1 - ((psi0 - psides0) - v0 * delta0 / Lf * dt);
+      fg[1 + epsi_start + i] = epsi1 - ((psi0 - psides0) + v0 * (delta0/Lf) * dt);
     }
   }
 };
@@ -171,8 +177,8 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // degrees (value in radians).
   // NOTE: Feel free to change this to something else.
   for (int i = delta_start; i < a_start; i++) {
-    vars_lowerbound[i] = -0.436332*Lf;
-    vars_upperbound[i] = 0.436332*Lf;
+    vars_lowerbound[i] = -0.436332;
+    vars_upperbound[i] = 0.436332;
   }
 
   // Acceleration/decceleration upper and lower limits.
@@ -247,20 +253,15 @@ vector<double> MPC::Solve(Eigen::VectorXd state, Eigen::VectorXd coeffs) {
   // {...} is shorthand for creating a vector, so auto x1 = {1.0,2.0}
   // creates a 2 element double vector.
 
-  /*vector<double> result;
+  vector<double> result;
 
-  result.push_back(solution.x[delta_start]);
-  result.push_back(solution.x[a_start]);
-
-  for(int i = 0; i < N-1; i++) {
-
-    result.push_back(solution.x[x_start + i + 1]);
-    result.push_back(solution.x[y_start + i + 1]);
+  for(int i = 0; i < solution.x.size(); i++) {
+    result.push_back(solution.x[i]);
   }
 
-  return result;*/
-  return {solution.x[x_start + 1],   solution.x[y_start + 1],
+  return result;
+/*  return {solution.x[x_start + 1],   solution.x[y_start + 1],
           solution.x[psi_start + 1], solution.x[v_start + 1],
           solution.x[cte_start + 1], solution.x[epsi_start + 1],
-          solution.x[delta_start],   solution.x[a_start]};
+          solution.x[delta_start],   solution.x[a_start]};*/
 }
