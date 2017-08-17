@@ -17,8 +17,7 @@ The state for the car is shown below as a vector:
 
 x - x is the point of the car on the map<br />
 y - y is the point of the car on the map<br />
-ψ - psi being the angle
-
+ψ - psi being the angle<br />
 v - v being the velocity
 
 ### Actuators
@@ -27,18 +26,17 @@ The actuators for the car is shown below as a vector:
 
 [δ, a]
 
-δ - delta meaning the steering actuation
-
+δ - delta meaning the steering actuation<br />
 a - a being the acceleration called the throttle.
 
 ### Update Equations
 
 The model updates with the following equations:
 
-`xt+1 = xt + vt ∗ cos(ψt) ∗ dt`
-`yt+1 = yt + vt ∗ sin(ψt) ∗ dt`
-`ψt+1 = ψt + (vt/L​f) ∗ δt ∗ dt`
-`vt+1 = vt + at ∗ dt`
+`xt+1 = xt + vt ∗ cos(ψt) ∗ dt`<br />
+`yt+1 = yt + vt ∗ sin(ψt) ∗ dt`<br />
+`ψt+1 = ψt + (vt/L​f) ∗ δt ∗ dt`<br />
+`vt+1 = vt + at ∗ dt`<br />
 
 ## Timestep Length and Elapsed Duration (N & dt)
 
