@@ -54,7 +54,6 @@ Eigen::VectorXd polyfit(Eigen::VectorXd xvals, Eigen::VectorXd yvals,
       A(j, i + 1) = A(j, i) * xvals(j);
     }
   }
-
   auto Q = A.householderQr();
   auto result = Q.solve(yvals);
   return result;
@@ -84,69 +83,69 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
-
+          double delta = j[1]["steering_angle"];
+          double a = j[1]["throttle"];
+          double steering_value;
+          double throttle_value;
+          double* ptrx = &ptsx[0];
+          double* ptry = &ptsy[0];
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
+          vector<double> mpc_x_vals;
+          vector<double> mpc_y_vals;
           /*
           * TODO: Calculate steering angle and throttle using MPC.
           *
           * Both are in between [-1, 1].
           *
           */
+          //https://discussions.udacity.com/t/how-to-incorporate-latency-into-the-model/257391/57
+          //Helped a lot shown above.
+          //Integrating latency
+          px  += v * cos(psi) * latency;
+          py  += v * sin(psi) * latency;
+          psi -= ( v / Lf ) * delta * latency;
+          v   += a * latency;
 
           for (int i = 0; i < ptsx.size(); i++) {
             double shift_x = ptsx[i]-px;
-            double shift_y = ptsx[i]-py;
+            double shift_y = ptsy[i]-py;
 
-            ptsx[i] = (shift_x * cos(0-psi)-shift_y*sin(0-psi));
-            ptsx[i] = (shift_x * sin(0-psi)-shift_y*cos(0-psi));
+            ptsx[i] = (shift_x*cos(0-psi)-shift_y*sin(0-psi));
+            ptsy[i] = (shift_x*sin(0-psi)+shift_y*cos(0-psi));
           }
-
-          double* ptrx = &ptsx[0];
-          Eigen::Map<Eigen::VectorXd> ptsx_transform(ptrx, 6);
-
-          double* ptry = &ptsy[0];
-          Eigen::Map<Eigen::VectorXd> ptsy_transform(ptry, 6);
+          //Trajectory Polynomials
+          Eigen::VectorXd ptsx_transform = Eigen::VectorXd::Map(ptrx, ptsx.size());
+          Eigen::VectorXd ptsy_transform = Eigen::VectorXd::Map(ptry, ptsy.size());
 
           auto coeffs = polyfit(ptsx_transform, ptsy_transform, 3);
-
           //caculate cte and epsi
           double cte = polyeval(coeffs, 0);
-          //double epsi = psi - atan(coeffs[1] + 2 * px * coeffs[2] + 3 * coeffs[3] * pow(px, 2))
           double epsi = -atan(coeffs[1]);
 
-          double steer_value = j[1]["steering_value"];
-          double throttle_value = j[1]["throttle"];
-
           Eigen::VectorXd state(6);
-          stata << 0, 0, 0, v, cte, epsi;
+          state << 0, 0, 0, v, cte, epsi;
 
           auto vars = mpc.Solve(state, coeffs);
+          // Calculating the steering value and throttle.
+          steering_value = -vars[delta_start]/(deg2rad(25) * Lf);
+          throttle_value = vars[a_start];
 
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-
-          double poly_inc = 2.5;
-          int num_points = 25;
-          for(int i = 1; i < num_points; i++) {
-            next_x_vals.push_back(poly_inc*i);
-            next_y_vals.push_back(polyeval(coeffs, poly_inc*i));
+          for (size_t i = 0; i < N; ++i) {
+              mpc_x_vals.push_back(vars[x_start + i]);
+              mpc_y_vals.push_back(vars[y_start + i]);
           }
 
-          vector<double> mpc_x_vals;
-          vector<double> mpc_y_vals;
-
-          for (int i = 2; i < vars.size(); i++) {
-            if(i%2 == 0) {
-              mpc_x_vals.push_back(vars[i]);
-            } else {
-              mpc_y_vals.push_back(vars[i]);
-            }
+          for (int i = 0; i < ptsx_transform.size(); ++i) {
+              next_x_vals.push_back(ptsx_transform[i]);
+              next_y_vals.push_back(ptsy_transform[i]);
           }
 
-          double Lf = 2.67;
-          
+          //Json messages
           json msgJson;
-          msgJson["steering_angle"] = vars[0]/(deg2rad(25)*Lf);
-          msgJson["throttle"] = vars[1];
+
+          msgJson["steering_angle"] = steering_value;
+          msgJson["throttle"] = throttle_value;
           
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
@@ -164,6 +163,7 @@ int main() {
           //
           // NOTE: REMEMBER TO SET THIS TO 100 MILLISECONDS BEFORE
           // SUBMITTING.
+          this_thread::sleep_for(chrono::milliseconds(100));
           ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
         }
       } else {
