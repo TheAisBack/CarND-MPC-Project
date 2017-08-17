@@ -15,9 +15,9 @@ The state for the car is shown below as a vector:
 
 [x, y, ψ, v]
 
-x - x is the point of the car on the map<br />
-y - y is the point of the car on the map<br />
-ψ - psi being the angle<br />
+x - x is the forward direction of the car<br />
+y - y is the lateral direction of the car<br />
+ψ - psi being the orientation<br />
 v - v being the velocity
 
 ### Actuators
@@ -44,9 +44,13 @@ _Student discusses the reasoning behind the chosen N (timestep length) and dt (e
 
 
 
+
+
 ## Polynomial Fitting and MPC Preprocessing
 
 _A polynomial is fitted to waypoints. If the student preprocesses waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described._
+
+
 
 
 
